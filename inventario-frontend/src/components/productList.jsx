@@ -1,16 +1,11 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useMemo } from 'react';
 import EditProductModal from './EditProductModal';
 
-const ProductList = ({ products, onProductDeleted, onProductUpdated }) => {
+const ProductList = ({ products, onProductDeleted, onProductUpdated, onOpenDeleteModal }) => {
   const [editingProduct, setEditingProduct] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: 'ascending'
-  });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
-  // Función para manejar el ordenamiento
+  // Función para ordenar productos
   const requestSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -19,10 +14,10 @@ const ProductList = ({ products, onProductDeleted, onProductUpdated }) => {
     setSortConfig({ key, direction });
   };
 
-  // Función para ordenar los productos
-  const sortedProducts = React.useMemo(() => {
+  // Productos ordenados
+  const sortedProducts = useMemo(() => {
     let sortableProducts = [...products];
-    if (sortConfig.key !== null) {
+    if (sortConfig.key) {
       sortableProducts.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -36,25 +31,10 @@ const ProductList = ({ products, onProductDeleted, onProductUpdated }) => {
     return sortableProducts;
   }, [products, sortConfig]);
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3000/api/products/${id}`);
-      onProductDeleted(id);
-    } catch (error) {
-      console.error('Error eliminando producto:', error);
-    }
-  };
-
-  const handleUpdate = async (updatedProduct) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:3000/api/products/${updatedProduct._id}`,
-        updatedProduct
-      );
-      onProductUpdated(response.data);
-    } catch (error) {
-      console.error('Error actualizando producto:', error);
-    }
+  // Función para manejar la actualización
+  const handleUpdate = (updatedProduct) => {
+    onProductUpdated(updatedProduct);
+    setEditingProduct(null);
   };
 
   return (
@@ -95,8 +75,12 @@ const ProductList = ({ products, onProductDeleted, onProductUpdated }) => {
                 <td>{product.quantity}</td>
                 <td>{product.category}</td>
                 <td>
-                  <button className='actbt' onClick={() => setEditingProduct(product)}>Actualizar</button>
-                  <button className='elimbt' onClick={() => handleDelete(product._id)}>Eliminar</button>
+                  <button className='actbt' onClick={() => setEditingProduct(product)}>
+                    Actualizar
+                  </button>
+                  <button className='elimbt' onClick={() => onOpenDeleteModal(product)}>
+                    Eliminar
+                  </button>
                 </td>
               </tr>
             ))}
